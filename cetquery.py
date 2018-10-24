@@ -15,11 +15,10 @@ class CetQuery:
         self.cet_session.headers.update({'Referer': 'http://cet.neea.edu.cn/cet/'})
     
     def get_captcha(self):
-        captcha_url = 'http://cache.neea.edu.cn/Imgs.do?c=CET&ik={}&t={}'.format(self.user_id, random.random())
+        captcha_url = f'http://cache.neea.edu.cn/Imgs.do?c=CET&ik={self.user_id}&t={random.random()}'
         response_captcha = self.cet_session.get(captcha_url)
         image_url = re.findall(r'"(.*?)"', response_captcha.text)[0]
-        captcha_path = 'code.png' # debug
-        # captcha_path = tempfile.NamedTemporaryFile().name
+        captcha_path = tempfile.NamedTemporaryFile().name
         urlretrieve(image_url, captcha_path)
         return captcha_path
     

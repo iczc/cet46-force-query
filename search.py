@@ -11,7 +11,7 @@ def get_config(filename):
     config = configparser.ConfigParser()
     config['DEFAULT'] = {}
     config_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
-    config.readfp(codecs.open(config_file, 'r', 'utf-8-sig'))
+    config.read_file(codecs.open(config_file, 'r', 'utf-8-sig'))
     return config['DEFAULT']
 
 def search():
@@ -32,23 +32,30 @@ def search():
 
     while True:
         user_id = prefix + "%03d" % room_id + "%02d" % seat_id
-        print(user_id)
+        print('正在尝试考号%s'%user_id)
         cet = CetQuery(user_id, user_name)
         captcha_path = cet.get_captcha()
         ruokuai_result = ruokuai.upload_image(captcha_path)
-        captcha = ruokuai_result['Result']
+        captcha = ruokuai_result.get('Result')
         # captcha = input("input captcha\n")
-        data = cet.get_result(captcha)
+        if captcha is None:
+            if 'Error' in ruokuai_result:
+                print('打码平台%s'%ruokuai_result['Error'])
+                break
+            else:
+                continue
 
+        print('验证码识别结果%s'%captcha)
+        data = cet.get_result(captcha)
         if '结果为空' in data:
-            print('not found')
+            print('查询结果为空')
             seat_id += 1
         elif '验证码错误' in data:
             ruokuai.report_error(ruokuai_result['Id'])
-            print('captcha error')
+            print('验证码错误')
             continue
         elif 'z' in data:
-            print('found it!')
+            print('已找到')
             print(data)
             break
 

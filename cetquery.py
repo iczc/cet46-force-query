@@ -2,6 +2,7 @@ import random
 import re
 import requests
 import tempfile
+import time
 
 from urllib.request import urlretrieve
 
@@ -16,8 +17,16 @@ class CetQuery:
     
     def get_captcha(self):
         captcha_url = f'http://cache.neea.edu.cn/Imgs.do?c=CET&ik={self.user_id}&t={random.random()}'
-        response_captcha = self.cet_session.get(captcha_url)
-        image_url = re.findall(r'"(.*?)"', response_captcha.text)[0]
+
+        while True:
+            try:
+                response_captcha = self.cet_session.get(captcha_url)
+                image_url = re.findall(r'"(.*?)"', response_captcha.text)[0]
+                break
+            except requests.exceptions.ConnectionError:
+                print('连接查询网站失败尝试重连')
+                time.sleep(3)
+
         captcha_path = tempfile.NamedTemporaryFile().name
         urlretrieve(image_url, captcha_path)
         return captcha_path
@@ -33,6 +42,14 @@ class CetQuery:
             rank_str = 'CET6_' + test_date + '_DANGCI'
         post_data['data'] = rank_str + ',' + self.user_id + ',' +self.user_name
         post_data['v'] = captcha
-        response_query = self.cet_session.post(query_url, post_data)
-        data = re.findall(r'"(.*?)"', response_query.text)[0]
+
+        while True:
+            try:
+                response_query = self.cet_session.post(query_url, post_data)
+                data = re.findall(r'"(.*?)"', response_query.text)[0]
+                break
+            except requests.exceptions.ConnectionError:
+                print('连接查询网站失败尝试重连')
+                time.sleep(3)
+
         return data
